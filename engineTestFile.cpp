@@ -114,29 +114,6 @@ TEST_CASE("Test Table Delete and Update Record From Table", "[Table]")
 		
 	}
 	
-	SECTION("Check void deleteRecord(size_t key)")
-	{
-		Table testTable2("testTable2", attributes1, primaryKeys1);
-		Table testTable3("testTable3", attributes1, primaryKeys1);
-		
-		testTable3.insertRecord(v1);
-		testTable3.insertRecord(v2);
-		testTable3.insertRecord(v3);
-		testTable3.insertRecord(v4);
-		testTable3.insertRecord(v5);
-		
-		testTable2.insertRecord(v3);
-		testTable2.insertRecord(v4);
-
-		
-		cout << "Section: Check Table deleteRecord(size_t key)" << endl;
-		cout << "testTable3 before\n" << testTable3.show() << endl;
-		// testTable3.deleteRecord({"kind == cat"});
-		cout << "testTable3 after\n" << testTable3.show() << endl;
-		
-		// REQUIRE(testTable3 == testTable2);
-	}
-	
 	SECTION("Check updateRecord(vector<string> desiredAttributes, vector<string> values, vector<string> boolExpressions)")
 	{
 		testTable.insertRecord(v1);
@@ -145,8 +122,8 @@ TEST_CASE("Test Table Delete and Update Record From Table", "[Table]")
 		testTable.insertRecord(v4);
 		testTable.insertRecord(v5);
 
-		// Table a = (db.getTable("animals").project("temp", {"name", "kind"})).rename("a", {"aname", "akind"});
-		// cout << a.show() << endl;
+		Table a = (testTable.project("temp", {"name", "kind"})).rename("a", {"aname", "akind"});
+		cout << a.show() << endl;
 	}
 }
 
@@ -345,9 +322,15 @@ TEST_CASE("Test DataBase Initialize, Insert, and Delete", "[DataBase]")
 		db.insertIntoTable("animals", v4);
 		db.insertIntoTable("animals", v5);
 
+		Table testTable2("testTable2", attributes1, primaryKeys1);
 		
-		
-		//not going to work until deleteRecord is fixed
+		testTable2.insertRecord(v1);
+		testTable2.insertRecord(v4);
+		testTable2.insertRecord(v5);
+
+		db.deleteFromTable("animals", {"kind == dog"});
+
+		REQUIRE(testTable2 == db.getTable("animals"));
 	}
 
 }
@@ -485,40 +468,44 @@ TEST_CASE("Test Union Difference and Cross Product", "[DataBase]")
 	SECTION("Test Table crossProduct(string tableName1, string tableName2)")
 	{
 		pair<string, int> p4 {"test", 20};
+ 
+  
+ 
+ 		vector<pair<string, int>> attributes2 = {p4};
+  		vector<string> primaryKeys2 = {"test"};
+  
+ 		vector<string> v6 = {"One"};
+ 		vector<string> v7 = {"Two"};
+  
+ 		vector<pair<string, int>> attributes3 = {p1, p2, p3, p4};
+  		
+  		db.createTable("testTable", attributes2, primaryKeys2);
+  		db.insertIntoTable("testTable", v6);
+ 		db.insertIntoTable("testTable", v7);
+ 		
+  		db.insertIntoTable("animals", v1);
+  		db.insertIntoTable("animals", v2);
+  
 
-		vector<pair<string, int>> attributes2 = {p4};
-		vector<string> primaryKeys2 = {"test"};
-
-		vector<string> v6 = {"One"};
-		vector<string> v7 = {"Two"};
-
-		vector<pair<string, int>> attributes3 = {p1, p2, p3, p4};
-		
-		db.createTable("testTable", attributes2, primaryKeys2);
-		db.insertIntoTable("testTable", v6);
-		db.insertIntoTable("testTable", v7);
-		
-		db.insertIntoTable("animals", v1);
-		db.insertIntoTable("animals", v2);
-
-		Table testTable2("testTable2", attributes3, {"name", "kind", "test"});
-
-		vector<string> v8 = {"Joe", "cat", "4", "One"};
-		vector<string> v9 = {"Spot", "dog", "10", "One"};
-		vector<string> v10 = {"Joe", "cat", "4", "Two"};
-		vector<string> v11 = {"Spot", "dog", "10", "Two"};
-
-		testTable2.insertRecord(v8);
-		testTable2.insertRecord(v9);
-		testTable2.insertRecord(v10);
-		testTable2.insertRecord(v11);
-
-
-		Table testTable3 = db.crossProduct("animals", "testTable");
-		
-		cout << testTable3.show() << endl;
-		
-		REQUIRE(testTable2 == testTable3);
+ 		Table testTable2("testTable2", attributes3, {"name", "kind", "test"});
+  
+ 
+ 		vector<string> v8 = {"Joe", "cat", "4", "One"};
+ 		vector<string> v9 = {"Spot", "dog", "10", "One"};
+ 		vector<string> v10 = {"Joe", "cat", "4", "Two"};
+ 		vector<string> v11 = {"Spot", "dog", "10", "Two"};
+  
+  		testTable2.insertRecord(v8);
+  		testTable2.insertRecord(v9);
+ 		testTable2.insertRecord(v10);
+ 		testTable2.insertRecord(v11);
+  
+  
+  		Table testTable3 = db.crossProduct("animals", "testTable");
+ 		
+ 		cout << testTable3.show() << endl;
+ 		
+  		REQUIRE(testTable2 == testTable3);
 
 	}
 }
