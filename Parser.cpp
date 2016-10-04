@@ -49,6 +49,7 @@ vector<string> Parser::stringToTokens (string boolExpression)
 	boolExpression.erase(remove(boolExpression.begin(), boolExpression.end(), '\r'), boolExpression.end());
 	boolExpression.erase(remove(boolExpression.begin(), boolExpression.end(), '\n'), boolExpression.end());
 	boolExpression.erase(remove(boolExpression.begin(), boolExpression.end(), '\t'), boolExpression.end());
+	boolExpression.erase(remove(boolExpression.begin(), boolExpression.end(), '\"'), boolExpression.end());
 	boolExpression.erase(remove(boolExpression.begin(), boolExpression.end(), ' '), boolExpression.end());
 	// convert string to tokens
 	int current = 0;
@@ -147,16 +148,9 @@ void Parser::commandOrQuery(string instruction)
 	instruction.erase(remove(instruction.begin(), instruction.end(), '\t'), instruction.end());
 	instruction.erase(remove(instruction.begin(), instruction.end(), ';'), instruction.end());
 	instruction.erase(remove(instruction.begin(), instruction.end(), ' '), instruction.end());
-	if(instruction.find("<-") == 0)// <- found 
+	if(instruction.find("<-") != string::npos)// <- found 
 	{
-		if(instruction.find("INSERT") == 0)// <- found whatever command could use a query
-		{
-			commandParse(instruction);
-		}
-		else
-		{
-			//put query parse here
-		}
+		queryParse(instruction);
 	}
 	else
 	{
@@ -343,13 +337,11 @@ void Parser::commandCreate(string instr)// We'll need
 	
 }
 
-void Parser::commandUpdate(string instr)
-{
-	
-}
+
 
 // split function from here: http://code.runnable.com/VHb0hWMZp-ws1gAr/splitting-a-string-into-a-vector-for-c%2B%2B
-vector<string> split(string str, char delimiter) {
+vector<string> split(string str, char delimiter)
+{
   vector<string> internal;
   stringstream ss(str); // Turn the string into a stream.
   string tok;
@@ -359,6 +351,35 @@ vector<string> split(string str, char delimiter) {
   }
   
   return internal;
+}
+
+void Parser::commandUpdate(string instr)
+{
+	string name;//name of relation
+	
+	name = instr.substr(0, instr.find("SET"));//get name of table
+	instr.erase(0, instr.find("SET")+3);//erase previous part of string
+	
+	string sInstr = instr.substr(0, instr.find("WHERE"));//get set commands
+	instr.erase(0, instr.find("WHERE")+5);//erase previous part of string
+	
+	sInstr.erase(remove(sInstr.begin(), sInstr.end(), '('), sInstr.end()); 
+	sInstr.erase(remove(sInstr.begin(), sInstr.end(), ')'), sInstr.end());
+	
+	vector<string> sets = split(sInstr, ',');//splits line into sets for parsing below
+	vector<string> desired;//desired attributes
+	vector<string> values;//values to be changed
+	for(int i = 0; i < sets.size(); i++)
+	{
+		desired.push_back(sets[i].substr(0, sets[i].find("=")));//gets our desired attributes
+		values.push_back(sets[i].substr(sets[i].find("=")+1, sets[i].length()-1));//gets our values
+	}
+	instr.erase(remove(instr.begin(), instr.end(), '('), instr.end()); //both lines eliminate parentheses 
+	instr.erase(remove(instr.begin(), instr.end(), ')'), instr.end());
+	instr.erase(remove(instr.begin(), instr.end(), '"'), instr.end());//eliminates quotes
+	vector<string> cond = convertBoolExpression(instr);//condition
+	
+	db->updateTableRecord(name, desired, values, cond);
 }
 
 vector<string> Parser::extractAttributes (string attributeList)
@@ -382,7 +403,7 @@ void Parser::commandInsert(string instr)
 		name = instr.substr(0, attributesIndex);
 		attributesIndex += 18;
 		string expression = instr.substr(attributesIndex);
-		Table *result = queryParse("tmp", expression);
+		Table *result = queryParseHelper(expression, 0, 0);
 		db->getTable(name)->insertRecord(result);
 	}
 	else
@@ -402,9 +423,324 @@ void Parser::commandInsert(string instr)
 	}
 }
 
-Table* Parser::queryParse(string qname, string instr)
+int getConditionEnd (string instr)
 {
-	
+	int conditionEnd = 0;
+	int parenCount = 0;
+	do
+	{
+		if (instr[conditionEnd] == '(')
+		{
+			parenCount++;
+		}
+		else if (instr[conditionEnd] == ')')
+		{
+			parenCount--;
+		}
+		conditionEnd++;
+	} while (parenCount > 0);
+	return conditionEnd;
+}
+
+Parser::QueryType Parser::firstQuery (string instr) {
+	cout << "firstQuery passed string: " << instr << endl;
+	int firstIndex = instr.length();
+	QueryType q = Parser::ERROR;	
+	if(db->containsTable(instr))
+	{
+		q = Parser::RELATION;
+	}
+	else if(db->containsView(instr))
+	{
+		q = Parser::RELATION;
+	}
+	if (instr.find("select") != string::npos)
+	{
+		int index = instr.find("select");
+		cout << "index: " << index << endl;
+		if (index <= firstIndex)
+		{
+			firstIndex = index;
+			q = Parser::SELECT;
+		}
+	}
+	if (instr.find("project") != string::npos)
+	{
+		int index = instr.find("project");
+		if (index <= firstIndex)
+		{
+			firstIndex = index;
+			q = Parser::PROJECT;
+		}
+	}
+	if (instr.find("rename") != string::npos)
+	{
+		int index = instr.find("rename");
+		if (index <= firstIndex)
+		{
+			firstIndex = index;
+			q = Parser::RENAME;
+		}
+	}
+	if (instr.find("+") != string::npos)
+	{
+		int index = instr.find("+");
+		if (index <= firstIndex)
+		{
+			firstIndex = index;
+			q = Parser::UNION;
+		}
+	}
+	if (instr.find("-") != string::npos)
+	{
+		int index = instr.find("-");
+		if (index <= firstIndex)
+		{
+			firstIndex = index;
+			q = Parser::DIFFERENCE;
+		}
+	}
+	if (instr.find("*") != string::npos)
+	{
+		int index = instr.find("*");
+		if (index <= firstIndex)
+		{
+			firstIndex = index;
+			q = Parser::PRODUCT;
+		}
+	}
+	if (instr.find("JOIN") != string::npos)
+	{
+		int index = instr.find("JOIN");
+		if (index <= firstIndex)
+		{
+			firstIndex = index;
+			q = Parser::JOIN;
+		}
+	}
+	return q;
+}
+
+void Parser::queryParse(string instr)
+{
+	string name;
+	if (instr.find("<-") != string::npos)
+	{
+		name = instr.substr(0, instr.find("<-"));
+	}
+	else
+	{
+		name = "tmp";
+	}
+	instr.erase(0, instr.find("<-") + 2);
+	QueryType q = firstQuery(instr);
+	cout << "QueryType: " << q << endl;
+	if (q == Parser::SELECT)
+	{
+		instr.erase(0, instr.find("select") + 6);
+		int conditionEnd = getConditionEnd(instr);
+		cout << instr << endl;
+		cout << conditionEnd << endl;
+		string conditionString = instr.substr(1, conditionEnd - 2);
+		cout << "conditions: " << conditionString << endl;
+		vector<string> conditions = convertBoolExpression(conditionString);
+		instr.erase(0, conditionEnd);
+		cout << instr << endl;
+		Table *tmp = queryParseHelper(instr, 0, 0);
+		Table *result = tmp->select(name, conditions);
+		db->createView(result);
+		delete tmp;
+	}
+	else if (q == Parser::PROJECT)
+	{
+		instr.erase(0, instr.find("project") + 7);
+		cout << instr << endl;
+		int openParen = instr.find("(");
+		int closeParen = instr.find(")");
+		string attributeListString = instr.substr(openParen + 1, closeParen - openParen - 1);
+		cout << "attributeListString: " << attributeListString << endl;
+		vector<string> attributes = split(attributeListString, ',');
+		cout << "attributes: " << endl;
+		printVector(attributes);
+		instr.erase(0, closeParen + 1);
+		if (instr[instr.length() - 1] == ')')
+		{
+			instr = instr.substr(0, instr.length() - 1);
+		}
+		cout << instr << endl;
+		Table *tmp = queryParseHelper(instr, 0, 0);
+		Table *result = tmp->project(name, attributes);
+		db->createView(result);
+		delete tmp;
+	}
+	else if (q == Parser::RENAME)
+	{
+		instr.erase(0, instr.find("rename") + 6);
+		cout << instr << endl;
+		int openParen = instr.find("(");
+		int closeParen = instr.find(")");
+		string newNameListString = instr.substr(openParen + 1, closeParen - openParen - 1);
+		cout << "newNameListString: " << newNameListString << endl;
+		vector<string> newNames = split(newNameListString, ',');
+		cout << "newNames: " << endl;
+		printVector(newNames);
+		instr.erase(0, closeParen + 1);
+		cout << instr << endl;
+		Table *tmp = queryParseHelper(instr, 0, 0);
+		Table *result = tmp->rename(name, newNames);
+		db->createView(result);
+		delete tmp;
+	}
+	else if (q == Parser::UNION)
+	{
+		string expr1 = instr.substr(0, instr.find("+"));
+		string expr2 = instr.substr(instr.find("+") + 1);
+		Table *tmp1 = queryParseHelper(expr1, 0, 0);
+		Table *tmp2 = queryParseHelper(expr2, 0, 1);
+		Table *result = db->setUnion(tmp1, tmp2);
+		db->createView(result);
+		delete tmp1;
+		delete tmp2;
+	}
+	else if (q == Parser::DIFFERENCE)
+	{
+
+	}
+	else if (q == Parser::PRODUCT)
+	{
+
+	}
+	else if (q == Parser::JOIN)
+	{
+
+	}
+	else
+	{
+		cout << "Query Parse failed" << endl;
+	}
+}
+
+Table* Parser::queryParseHelper(string instr, int depth, int pair)
+{
+	cout << "queryParseHelper passed string " << instr << endl;
+	string name;
+	if (instr.find("<-") != string::npos)
+	{
+		name = instr.substr(0, instr.find("<-"));
+	}
+	else
+	{
+		name = "tmp";
+	}
+	QueryType q = firstQuery(instr);
+	cout << "QueryType: " << q << endl;
+	if (q == Parser::SELECT)
+	{
+
+		instr.erase(0, instr.find("select") + 6);
+		int conditionEnd = getConditionEnd(instr);
+		cout << instr << endl;
+		cout << conditionEnd << endl;
+		string conditionString = instr.substr(1, conditionEnd - 2);
+		cout << "conditions: " << conditionString << endl;
+		vector<string> conditions = convertBoolExpression(conditionString);
+		instr.erase(0, conditionEnd);
+		if (instr[instr.length() - 1] == ')')
+		{
+			instr = instr.substr(0, instr.length() - 1);
+		}
+		cout << instr << endl;
+		Table *tmp = queryParseHelper(instr, depth + 1, pair);
+		string tmpName = "tmp_";
+		tmpName += depth;
+		tmpName += "_";
+		tmpName += pair;
+		Table *result = tmp->select(tmpName, conditions);
+		delete tmp;
+		return result;
+	}
+	else if (q == Parser::PROJECT)
+	{
+		instr.erase(0, instr.find("project") + 7);
+		cout << instr << endl;
+		int openParen = instr.find("(");
+		int closeParen = instr.find(")");
+		string attributeListString = instr.substr(openParen + 1, closeParen - openParen - 1);
+		cout << "attributeListString: " << attributeListString << endl;
+		vector<string> attributes = split(attributeListString, ',');
+		cout << "attributes: " << endl;
+		printVector(attributes);
+		instr.erase(0, closeParen + 1);
+		cout << instr << endl;
+		Table *tmp = queryParseHelper(instr, depth + 1, pair);
+		string tmpName = "tmp_";
+		tmpName += depth;
+		tmpName += "_";
+		tmpName += pair;
+		Table *result = tmp->project(tmpName, attributes);
+		delete tmp;
+		return result;
+	}
+	else if (q == Parser::RENAME)
+	{
+		instr.erase(0, instr.find("rename") + 6);
+		cout << instr << endl;
+		int openParen = instr.find("(");
+		int closeParen = instr.find(")");
+		string newNameListString = instr.substr(openParen + 1, closeParen - openParen - 1);
+		cout << "newNameListString: " << newNameListString << endl;
+		vector<string> newNames = split(newNameListString, ',');
+		cout << "newNames: " << endl;
+		printVector(newNames);
+		instr.erase(0, closeParen + 1);
+		cout << instr << endl;
+		Table *tmp = queryParseHelper(instr, depth + 1, pair);
+		string tmpName = "tmp_";
+		tmpName += depth;
+		tmpName += "_";
+		tmpName += pair; 
+		Table *result = tmp->rename(tmpName, newNames);
+		delete tmp;
+		return result;
+	}
+	else if (q == Parser::UNION)
+	{
+		string expr1 = instr.substr(0, instr.find("+") - 1);
+		string expr2 = instr.substr(instr.find("+") + 1);
+		Table *tmp1 = queryParseHelper(expr1, depth + 1, pair);
+		Table *tmp2 = queryParseHelper(expr2, depth + 1, pair);
+		Table *result = db->setUnion(tmp1, tmp2);
+		delete tmp1;
+		delete tmp2;
+		return result;
+	}
+	else if (q == Parser::DIFFERENCE)
+	{
+
+	}
+	else if (q == Parser::PRODUCT)
+	{
+
+	}
+	else if (q == Parser::JOIN)
+	{
+
+	}
+	else if (q == Parser::RELATION)
+	{
+		if(db->containsTable(instr))
+		{
+			return db->getTable(instr);
+		}
+		else if(db->containsView(instr))
+		{
+			return db->getView(instr);
+		}
+	}
+	else
+	{
+		throw "Query Parse failed";
+	}
 }
 
 void Parser::commandDrop(string tablename)

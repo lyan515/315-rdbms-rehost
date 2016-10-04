@@ -77,6 +77,7 @@ public:
 	
 	//Return a view that contains the set union of two tables
 	Table* setUnion(string tableName1, string tableName2);
+	Table* setUnion(Table *t1, Table *t2);
 	
 	//Return a view that contains the set difference product of two tables
 	Table* setDifference(string tableName1, string tableName2);
@@ -88,6 +89,9 @@ public:
 	Table* getTable(string tableName);
 	
 	Table* getView(string viewName);
+
+	bool containsTable(string tableName);
+	bool containsView(string viewName);
 	
 	//This reads a database file from the disk and loads it into memory, 
 	//recreating the Table object and inserting it into the hash table of tables
