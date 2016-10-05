@@ -116,14 +116,35 @@ TEST_CASE("Test Table Delete and Update Record From Table", "[Table]")
 	
 	SECTION("Check updateRecord(vector<string> desiredAttributes, vector<string> values, vector<string> boolExpressions)")
 	{
+		pair<string, int> p1 {"aname", 20};
+		pair<string, int> p2 {"akind", 8};
+		vector<pair<string, int>> attributes1 = {p1, p2};
+		vector<string> primaryKeys1 = {"aname", "akind"};
+	
+		Table testTable2("testTable2", attributes1, primaryKeys1);
+		
+		vector<string> v6 = {"Joe", "cat"};
+		vector<string> v7 = {"Spot", "dog"};
+		vector<string> v8 = {"Snoopy", "dog"};
+		vector<string> v9 = {"Tweety", "bird"};
+		vector<string> v10 = {"Joe", "bird"};
+
 		testTable.insertRecord(v1);
 		testTable.insertRecord(v2);
 		testTable.insertRecord(v3);
 		testTable.insertRecord(v4);
 		testTable.insertRecord(v5);
 
+		testTable2.insertRecord(v6);
+		testTable2.insertRecord(v7);
+		testTable2.insertRecord(v8);
+		testTable2.insertRecord(v9);
+		testTable2.insertRecord(v10);
+
 		Table a = (testTable.project("temp", {"name", "kind"})).rename("a", {"aname", "akind"});
 		cout << a.show() << endl;
+
+		REQUIRE(a == testTable2);
 	}
 }
 
@@ -441,7 +462,6 @@ TEST_CASE("Test Union Difference and Cross Product", "[DataBase]")
 
 	SECTION("Test Table setDifference(string tableName1, string tableName2)")
 	{
-		// not going to work until deleteRecord works
 
 		db.createTable("testTable", attributes1, primaryKeys1);
 		db.createTable("testTable2", attributes1, primaryKeys1);
