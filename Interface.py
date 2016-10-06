@@ -27,8 +27,8 @@ error_message = "We didn't quite understand that. Please check your inputs and t
 
 #TODO: make read_in() return something aftet each inputted line
 def read_in(): #WARNING: when implementing or modifying the recursion in this function, be sure that it doesn't cause too much recursion, which is a thing that causes run time errors.
-	for line in sys.stdin:
-		instruction = line #not necessary, but I think it looks nicer
+	#for line in sys.stdin:
+		instruction = raw_input()
 		inputsplit = line.split(' ') #splits the input string by whitespace
 		if(inputsplit[0] == "Add"):
 			#modify and send instruction socket to parser
