@@ -42,9 +42,16 @@ def read_in(): #WARNING: when implementing or modifying the recursion in this fu
 			pass
 		elif(inputsplit[0] == "Update"):
 			#modify and send instruction socket to parser
-			inst1 = 'currentbal <- project (' + inputsplit[3] ') (select (accountNumber == ' + inputsplit[2] + ') Users)' #TODO: how to access this number?
+			#inst1 = 'currentbal <- project (' + inputsplit[3] ') (select (accountNumber == ' + inputsplit[2] + ') Users)' #TODO: how to access this number?
 			#				    savings or checking				     account number
-			#instr = 'UPDATE Users SET (' + inputsplit[3] + ') (' + inputsplit[4] + ') WHERE (accountNumber = ' + inputsplit[2] + ')' #TODO: double check expected format
+			#TODO: check the length of inputsplit[4], which, by default, should contain the amount to update with. however, if the user types, say, "+ amount"
+			#      or "- amount" instead of "+amount" or "-amount". if this has happened, inputsplit[4] will be of length 1, and inputsplit[5] will exist and
+			#      will contain the actual amount
+			#      alternatively, we just tell the user not to put a space between the +/- and the amount. I personally like this idea better
+
+			#newNumber = number obtained from database + (or -) inputted amount (inputsplit[4 or 5])
+
+			#instr = 'UPDATE Users SET (' + inputsplit[3] + ') (' + newNumber + ') WHERE (accountNumber = ' + inputsplit[2] + ')' #TODO: double check expected format
 			#				account,		amount,						account number
 			
 			pass
