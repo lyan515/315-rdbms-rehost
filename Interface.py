@@ -31,9 +31,9 @@ def read_in():
 		#				    savings or checking				     account number
 
 		#TODO: check the length of inputsplit[4], which, by default, should contain the amount to update with. however, if the user types, say, "+ amount"
-		#      or "- amount" instead of "+amount" or "-amount". if this has happened, inputsplit[4] will be of length 1, and inputsplit[5] will exist and
-		#      will contain the actual amount
-		#      alternatively, we just tell the user not to put a space between the +/- and the amount. I personally like this idea better
+			#subtraction will be noted as (value)
+			#will contain the actual amount
+			#If the value subtracted is greater than the balance, we'll just set it as 0
 
 		#newNumber = number obtained from database + (or -) inputted amount (inputsplit[4 or 5])
 
