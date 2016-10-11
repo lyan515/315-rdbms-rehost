@@ -16,20 +16,20 @@ def read_in():
 	instruction = raw_input(">")
 	inputsplit = instruction.split(' ') #splits the input string by whitespace
 	print(chr(27) + "[2J")
-	if(inputsplit[0] == "Add"):
+	if(inputsplit[0].lower() == "add"):
 		#modify and send instruction socket to parser
 		instr = 'INSERT INTO bank VALUES FROM (' + inputsplit[2] + ', ' + inputsplit[3] + ', 0, 0);' 
 		#(account number, account name,savings, checking)
 		sendToSocket(instr)
 		
-	elif(inputsplit[0] == "Delete"):
+	elif(inputsplit[0].lower() == "delete"):
 		#modify and send instruction socket to parser
 		print" "
 		print" "
 		instr = "DELETE FROM bank WHERE (accountNumber == " + inputsplit[2] + ");"
 		sendToSocket(instr)
 		
-	elif(inputsplit[0] == "Update"):
+	elif(inputsplit[0].lower() == "update"):
 		#modify and send instructions socket to parser
 		print" "
 		print" "
@@ -56,7 +56,7 @@ def read_in():
 		instr3 = 'UPDATE bank SET (' + inputsplit[3] + " = " + str(updBal) + ') WHERE (accountNumber == ' + inputsplit[2] + ');' 
 		sendToSocket(instr3)
 
-	elif(inputsplit[0] == "Display"):
+	elif(inputsplit[0].lower() == "display"):
 		#modify and send instructions socket to parser
 		print" "
 		print" "
@@ -79,7 +79,7 @@ def read_in():
 		print "%-20s %-20s %-20s %-1s" % (rtnStrSplit3[0], rtnStrSplit3[2], rtnStrSplit3[4],rtnStrSplit3[6])
 		print ""
 
-	elif(inputsplit[0] == "Transfer"):
+	elif(inputsplit[0].lower == "transfer"):
 		#modify and send instruction socket to parser
 		print" "
 		print" "
@@ -121,7 +121,7 @@ def read_in():
 		instr5 = 'UPDATE bank SET (' + otherAccount + " = " + str(updBal) + ') WHERE (accountNumber == ' + inputsplit[2] + ');' 
 		sendToSocket(instr5)
 		
-	elif(inputsplit[0] == "Exit"):
+	elif(inputsplit[0].lower == "exit"):
 		global exit
 		print" "
 		print" "
