@@ -1,5 +1,12 @@
 # rdbms
 
+A rehost of my group project that was previously inaccessable due to it being on github.tamu.edu
+
+Team f-502: The I Don't Knows
+
+Ryan Branson, Brent Lanson, Andrew Meserole, and Travis Stebbins
+
+
 ## Cloning Repo
 Since there are submodules you have to recursively clone in the repo.  
 `git clone --recursive https://github.tamu.edu/ameserole/rdbms.git` 
