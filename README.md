@@ -64,3 +64,9 @@ To run the engine unit tests run the following commands:
 Here are the sources for the submodules we are using.
 
 Catch, A modern, C++-native, header-only, framework for unit-tests, TDD and BDD C++ Automated Test Cases in Headers:   https://github.com/philsquared/Catch/tree/master
+
+## Design Document
+https://docs.google.com/document/d/19FuMUIhkl1bSlMs3exnjRCwHLUbLx7NrX5FuLEClh8A/edit#
+
+## Final Report
+https://docs.google.com/document/d/1-nexEpkEpIZbNZFr8-vUgzBx7e8cjEU1kBV13u7BdVo/edit
