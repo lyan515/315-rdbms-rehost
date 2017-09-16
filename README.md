@@ -1,4 +1,4 @@
-# rdbms
+# Relational Database Management System(RDBMS)
 
 A rehost of my group project that was previously inaccessable due to it being on github.tamu.edu
 
